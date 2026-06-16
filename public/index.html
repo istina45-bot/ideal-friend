@@ -1,1 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Идеальный друг</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .app { width: 100%; max-width: 420px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.10); min-height: 580px; display: flex; flex-direction: column; }
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
 
+  /* Onboarding */
+  .ob-head { padding: 1.75rem 1.5rem 0.75rem; }
+  .ob-head h2 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 5px; }
+  .ob-head p { font-size: 13px; color: #888; line-height: 1.5; }
+  .steps { display: flex; gap: 5px; padding: 0.75rem 1.5rem; }
+  .sd { height: 3px; border-radius: 2px; background: #e8e8e8; flex: 1; transition: background 0.3s; }
+  .sd.done { background: #b0aae8; }
+  .sd.active { background: #7F77DD; }
+  .ob-body { flex: 1; overflow-y: auto; padding: 0.25rem 1.5rem 0.5rem; }
+  .ql { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 8px; margin-top: 1.1rem; letter-spacing: 0.03em; text-transform: uppercase; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { padding: 7px 14px; border: 1.5px solid #e8e8e8; border-radius: 20px; font-size: 13px; color: #555; cursor: pointer; transition: all 0.15s; background: #fff; }
+  .chip:hover { background: #f5f4f0; }
+  .chip.on { background: #EEEDFE; border-color: #AFA9EC; color: #3C3489; }
+  .mgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .mc { padding: 10px 4px; border: 1.5px solid #e8e8e8; border-radius: 12px; text-align: center; cursor: pointer; font-size: 11px; color: #666; transition: all 0.15s; }
+  .mc .em { font-size: 20px; display: block; margin-bottom: 3px; }
+  .mc:hover { background: #f5f4f0; }
+  .mc.on { border-color: #AFA9EC; background: #EEEDFE; color: #3C3489; }
+  .ni { width: 100%; padding: 10px 13px; border: 1.5px solid #e8e8e8; border-radius: 12px; font-size: 15px; background: #fafafa; color: #1a1a1a; outline: none; font-family: inherit; transition: border-color 0.15s; }
+  .ni:focus { border-color: #7F77DD; background: #fff; }
+  .ob-foot { padding: 1rem 1.5rem; }
+  .btn-p { width: 100%; padding: 12px; background: #7F77DD; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; font-family: inherit; }
+  .btn-p:hover { opacity: 0.9; }
+  .btn-p:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* Chat */
+  .ch-head { padding: 1rem 1.25rem; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
+  .av { width: 40px; height: 40px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; position: relative; }
+  .av::after { content: ''; position: absolute; bottom: 1px; right: 1px; width: 10px; height: 10px; border-radius: 50%; background: #1D9E75; border: 2px solid #fff; }
+  .cn { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+  .cs { font-size: 11px; color: #1D9E75; }
+  .msgs { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 10px; }
+  .msg { display: flex; flex-direction: column; max-width: 82%; }
+  .msg.ai { align-self: flex-start; }
+  .msg.me { align-self: flex-end; }
+  .bub { padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.55; word-break: break-word; }
+  .msg.ai .bub { background: #f0f0f0; color: #1a1a1a; border-bottom-left-radius: 4px; }
+  .msg.me .bub { background: #7F77DD; color: white; border-bottom-right-radius: 4px; }
+  .mt { font-size: 10px; color: #aaa; margin-top: 3px; padding: 0 3px; }
+  .msg.me .mt { align-self: flex-end; }
+  .typing-bub { display: flex; align-items: center; gap: 4px; padding: 11px 14px; background: #f0f0f0; border-radius: 18px; border-bottom-left-radius: 4px; width: fit-content; }
+  .typing-bub span { width: 7px; height: 7px; border-radius: 50%; background: #bbb; animation: bop 1.2s infinite; }
+  .typing-bub span:nth-child(2) { animation-delay: .2s; }
+  .typing-bub span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bop { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+  .inp-area { padding: 0.75rem 1rem; border-top: 1px solid #f0f0f0; display: flex; gap: 8px; align-items: flex-end; }
+  .ci { flex: 1; padding: 10px 14px; border: 1.5px solid #e8e8e8; border-radius: 20px; font-size: 14px; background: #fafafa; color: #1a1a1a; outline: none; resize: none; max-height: 120px; line-height: 1.45; font-family: inherit; transition: border-color 0.15s; }
+  .ci:focus { border-color: #7F77DD; background: #fff; }
+  .sb { width: 38px; height: 38px; border-radius: 50%; background: #7F77DD; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity 0.15s; font-size: 16px; }
+  .sb:hover { opacity: 0.9; }
+  .sb:disabled { opacity: 0.35; }
+  .err-msg { font-size: 12px; color: #c0392b; background: #fdf0f0; border-radius: 8px; padding: 6px 12px; text-align: center; margin: 0 1rem 0.5rem; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Шаг 1: Имя и возраст -->
+  <div class="screen active" id="s1">
+    <div class="ob-head">
+      <h2>Привет! Я твой новый друг 👋</h2>
+      <p>Пара вопросов — и начнём общаться.</p>
+    </div>
+    <div class="steps"><div class="sd active"></div><div class="sd"></div><div class="sd"></div></div>
+    <div class="ob-body">
+      <div class="ql">Как тебя зовут?</div>
+      <input class="ni" id="nameInput" type="text" placeholder="Имя..." maxlength="30">
+      <div class="ql">Возраст</div>
+      <div class="chips">
+        <div class="chip" data-g="age" data-v="до 18">до 18</div>
+        <div class="chip" data-g="age" data-v="18–25">18–25</div>
+        <div class="chip" data-g="age" data-v="26–35">26–35</div>
+        <div class="chip" data-g="age" data-v="36–45">36–45</div>
+        <div class="chip" data-g="age" data-v="45+">45+</div>
+      </div>
+    </div>
+    <div class="ob-foot"><button class="btn-p" id="btn1" onclick="go(2)" disabled>Дальше →</button></div>
+  </div>
+
+  <!-- Шаг 2: Интересы -->
+  <div class="screen" id="s2">
+    <div class="ob-head">
+      <h2>Чем увлекаешься?</h2>
+      <p>Выбери всё что близко — буду говорить о твоём.</p>
+    </div>
+    <div class="steps"><div class="sd done"></div><div class="sd active"></div><div class="sd"></div></div>
+    <div class="ob-body">
+      <div class="chips" style="margin-top:0.5rem">
+        <div class="chip" data-g="int" data-v="музыка">🎵 музыка</div>
+        <div class="chip" data-g="int" data-v="кино и сериалы">🎬 кино</div>
+        <div class="chip" data-g="int" data-v="спорт">⚽ спорт</div>
+        <div class="chip" data-g="int" data-v="путешествия">✈️ путешествия</div>
+        <div class="chip" data-g="int" data-v="игры">🎮 игры</div>
+        <div class="chip" data-g="int" data-v="книги">📚 книги</div>
+        <div class="chip" data-g="int" data-v="технологии">💻 технологии</div>
+        <div class="chip" data-g="int" data-v="еда и кулинария">🍕 еда</div>
+        <div class="chip" data-g="int" data-v="искусство">🎨 искусство</div>
+        <div class="chip" data-g="int" data-v="природа">🌿 природа</div>
+        <div class="chip" data-g="int" data-v="бизнес">💼 бизнес</div>
+        <div class="chip" data-g="int" data-v="саморазвитие">🧠 саморазвитие</div>
+      </div>
+    </div>
+    <div class="ob-foot"><button class="btn-p" id="btn2" onclick="go(3)" disabled>Дальше →</button></div>
+  </div>
+
+  <!-- Шаг 3: Настроение -->
+  <div class="screen" id="s3">
+    <div class="ob-head">
+      <h2>Как ты сейчас?</h2>
+      <p>Подстроюсь под твоё настроение.</p>
+    </div>
+    <div class="steps"><div class="sd done"></div><div class="sd done"></div><div class="sd active"></div></div>
+    <div class="ob-body">
+      <div class="mgrid" style="margin-top:0.5rem">
+        <div class="mc" data-g="mood" data-v="отличное настроение"><span class="em">😄</span>Отлично</div>
+        <div class="mc" data-g="mood" data-v="спокойное настроение"><span class="em">😌</span>Спокойно</div>
+        <div class="mc" data-g="mood" data-v="немного грустно"><span class="em">😔</span>Грустно</div>
+        <div class="mc" data-g="mood" data-v="тревога и стресс"><span class="em">😰</span>Тревожно</div>
+        <div class="mc" data-g="mood" data-v="скучаю"><span class="em">😑</span>Скучно</div>
+        <div class="mc" data-g="mood" data-v="устал"><span class="em">😴</span>Устал</div>
+        <div class="mc" data-g="mood" data-v="злюсь"><span class="em">😤</span>Злюсь</div>
+        <div class="mc" data-g="mood" data-v="полон энергии"><span class="em">🔥</span>В огне!</div>
+      </div>
+    </div>
+    <div class="ob-foot"><button class="btn-p" id="btn3" onclick="startChat()" disabled>Поехали! →</button></div>
+  </div>
+
+  <!-- Чат -->
+  <div class="screen" id="s4">
+    <div class="ch-head">
+      <div class="av">🤝</div>
+      <div>
+        <div class="cn" id="friendLabel">Друг</div>
+        <div class="cs">онлайн</div>
+      </div>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <div id="errArea"></div>
+    <div class="inp-area">
+      <textarea class="ci" id="ci" placeholder="Напиши что-нибудь..." rows="1"></textarea>
+      <button class="sb" id="sb" onclick="send()">➤</button>
+    </div>
+  </div>
+
+</div>
+<script>
+const API = '/chat'; // меняешь на свой Railway URL когда задеплоишь
+const ud = { name:'', age:'', interests:[], mood:'' };
+const hist = [];
+let busy = false;
+
+document.querySelectorAll('.chip,.mc').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const g=el.dataset.g, v=el.dataset.v;
+    if(g==='int'){
+      el.classList.toggle('on');
+      ud.interests=[...document.querySelectorAll('.chip[data-g="int"].on')].map(e=>e.dataset.v);
+      document.getElementById('btn2').disabled=ud.interests.length===0;
+    } else {
+      document.querySelectorAll(`[data-g="${g}"]`).forEach(e=>e.classList.remove('on'));
+      el.classList.add('on');
+      if(g==='age'){ud.age=v;chk1();}
+      if(g==='mood'){ud.mood=v;document.getElementById('btn3').disabled=false;}
+    }
+  });
+});
+
+document.getElementById('nameInput').addEventListener('input',e=>{ud.name=e.target.value.trim();chk1();});
+function chk1(){document.getElementById('btn1').disabled=!ud.name||!ud.age;}
+
+function go(n){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s'+n).classList.add('active');
+}
+
+function ts(){return new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});}
+
+function addMsg(text,who){
+  const m=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.className='msg '+who;
+  d.innerHTML=`<div class="bub">${text.replace(/\n/g,'<br>')}</div><div class="mt">${ts()}</div>`;
+  m.appendChild(d);
+  m.scrollTop=m.scrollHeight;
+  if(who==='me') hist.push({role:'user',content:text});
+  else hist.push({role:'assistant',content:text});
+}
+
+function showTyping(){
+  const m=document.getElementById('msgs');
+  const d=document.createElement('div');
+  d.id='typ';d.className='msg ai';
+  d.innerHTML='<div class="typing-bub"><span></span><span></span><span></span></div>';
+  m.appendChild(d);m.scrollTop=m.scrollHeight;
+}
+function hideTyping(){const t=document.getElementById('typ');if(t)t.remove();}
+
+function sysPrompt(){
+  return `Ты — лучший друг пользователя по имени ${ud.name}. О нём:
+- Возраст: ${ud.age}
+- Интересы: ${ud.interests.join(', ')}
+- Настроение: ${ud.mood}
+
+Правила:
+- Ты настоящий друг, не ассистент. Не говори что ты ИИ если не спросят.
+- Общайся неформально, тепло, на "ты". Живой язык.
+- Помни всё что он говорит. Задавай вопросы о его жизни.
+- Если человек пишет много и о важном — выслушай, не торопись с советами.
+- Ответы короткие, как в мессенджере. Максимум 2-3 предложения.
+- Никаких списков и маркдауна — только живая речь.`;
+}
+
+async function callAPI(userMsg,isFirst=false){
+  const messages=isFirst?[{role:'user',content:userMsg}]:[...hist,{role:'user',content:userMsg}];
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),30000);
+  try{
+    const r=await fetch(API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      signal:ctrl.signal,
+      body:JSON.stringify({system:sysPrompt(),messages})
+    });
+    clearTimeout(timer);
+    if(!r.ok) throw new Error('api_error');
+    const d=await r.json();
+    return d.text;
+  } catch(e){
+    clearTimeout(timer);throw e;
+  }
+}
+
+function showErr(msg){
+  const a=document.getElementById('errArea');
+  a.innerHTML=`<div class="err-msg">${msg}</div>`;
+  setTimeout(()=>{a.innerHTML='';},4000);
+}
+
+async function startChat(){
+  go(4);
+  document.getElementById('friendLabel').textContent=ud.name+'\'s друг';
+  showTyping();
+  try{
+    const g=await callAPI(`Поприветствуй ${ud.name} как старый друг. Учти настроение: ${ud.mood}. Одно-два предложения, тепло и по-человечески.`,true);
+    hideTyping();addMsg(g,'ai');
+  } catch(e){
+    hideTyping();
+    const fallback=`Привет, ${ud.name}! Рад тебя видеть. Как ты?`;
+    addMsg(fallback,'ai');
+    hist.push({role:'assistant',content:fallback});
+  }
+}
+
+async function send(){
+  const ci=document.getElementById('ci');
+  const text=ci.value.trim();
+  if(!text||busy)return;
+  ci.value='';ci.style.height='auto';
+  addMsg(text,'me');
+  busy=true;
+  document.getElementById('sb').disabled=true;
+  showTyping();
+  try{
+    const reply=await callAPI(text);
+    hideTyping();addMsg(reply,'ai');
+  } catch(e){
+    hideTyping();
+    showErr(e.name==='AbortError'?'Ответ занял слишком долго, попробуй снова.':'Что-то пошло не так. Попробуй ещё раз.');
+  }
+  busy=false;
+  document.getElementById('sb').disabled=false;
+  ci.focus();
+}
+
+document.getElementById('ci').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}
+});
+document.getElementById('ci').addEventListener('input',function(){
+  this.style.height='auto';
+  this.style.height=Math.min(this.scrollHeight,120)+'px';
+});
+</script>
+</body>
+</html>
